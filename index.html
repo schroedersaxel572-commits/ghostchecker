@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GhostCheck</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GhostCheck">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0f6b4f">
+<style>
+:root{--bg:#f3f6f4;--surface:#fff;--ink:#14231c;--muted:#52645a;--line:#cfdad3;--accent:#0f6b4f;--accent-ink:#fff;--warn:#8a4b00;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1612;--surface:#16211b;--ink:#e6f0ea;--muted:#9bb0a4;--line:#2a3a31;--accent:#4fc79b;--accent-ink:#06120d;--warn:#e0a45a}}
+:root[data-theme="dark"]{--bg:#0e1612;--surface:#16211b;--ink:#e6f0ea;--muted:#9bb0a4;--line:#2a3a31;--accent:#4fc79b;--accent-ink:#06120d;--warn:#e0a45a}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif}
+main{max-width:720px;margin:0 auto;padding:28px 18px 56px}
+h1{font:700 1.9rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 8px}
+h2{font:700 1.15rem/1.3 Georgia,serif;margin:0 0 4px}
+p{margin:0 0 12px}
+.lead{color:var(--muted);max-width:60ch}
+.note{border-left:4px solid var(--warn);padding:8px 12px;background:var(--surface);color:var(--muted);border-radius:0 6px 6px 0;margin:18px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 6px}
+input{flex:1 1 220px;padding:12px 14px;font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+button,.btn{font-weight:600;font-size:1rem;font-family:inherit;line-height:1.2;min-height:48px;padding:13px 18px;border-radius:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-decoration:none;display:inline-block}
+button.ghost,.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.err{color:var(--warn);font-weight:600;min-height:1.4em;margin:0}
+.plat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:14px}
+.plat .links{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.plat ul{margin:8px 0 0;padding:0;list-style:none}
+.plat li{padding:6px 0;border-top:1px solid var(--line)}
+.plat label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.plat input[type=checkbox]{flex:none;width:18px;height:18px;margin-top:4px;padding:0;accent-color:var(--accent)}
+.prog{color:var(--muted);font-size:.9rem;margin-top:8px}
+.hide{display:none}
+footer{margin-top:28px;color:var(--muted);font-size:.9rem}
+@media (max-width:520px){main{padding:20px 14px 48px}h1{font-size:1.6rem}#go,.btn{width:100%}.plat li{padding:10px 0}.plat input[type=checkbox]{width:24px;height:24px;margin-top:2px}.plat label{gap:12px}}
+</style>
+</head>
+<body>
+<main>
+<h1>GhostCheck</h1>
+<p class="lead">See what the public can find about your own username on Instagram, Snapchat, TikTok and Facebook, then tighten each account with a short privacy checklist.</p>
+<div class="note">For checking your own accounts, or for a classroom exercise with a username you are allowed to use. Only publicly visible pages are opened, and nothing you type leaves this page.</div>
+
+<section class="plat" id="nameBox">
+<h2>Search my own name</h2>
+<p style="color:var(--muted)">See what a stranger finds when they search your name. Use a private window for the most accurate view.</p>
+<div class="row" style="margin:8px 0">
+<input id="nm" type="text" placeholder="Your own full name" autocomplete="off" aria-label="Your own full name">
+<button type="button" onclick="nameSearch()">Show my name searches</button>
+</div>
+<label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input id="mine" type="checkbox" style="flex:none;width:22px;height:22px;padding:0;accent-color:var(--accent)"> <span>This is my own name</span></label>
+<p class="err" id="nerr" role="alert"></p>
+<div class="links" id="nres"></div>
+</section>
+<div class="row">
+<input id="u" type="text" placeholder="Your username" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Your username">
+<button id="go" type="button" onclick="build()">Build my checklist</button>
+</div>
+<p class="err" id="err" role="alert"></p>
+<p class="prog" id="tip">Keep it on your phone: in Safari tap Share, then Add to Home Screen.</p>
+
+<div id="out" class="hide">
+<div id="plats"></div>
+<footer>Open each profile in a private or logged-out window to see what a stranger sees. Usernames that don’t exist will show a “not found” page on that platform.</footer>
+</div>
+</main>
+<script>
+var P=[
+{n:"Instagram",url:function(u){return "https://www.instagram.com/"+u+"/"},
+ tips:["Set the account to Private if you don’t need public reach","Check that your bio has no phone number, school or address","Turn off “Show activity status”","Review who can tag and mention you","Remove location tags from old posts","Use a different username from your other apps"]},
+{n:"Snapchat",url:function(u){return "https://www.snapchat.com/add/"+u},
+ tips:["Set “Who can contact me” and “Who can view my story” to Friends","Turn off “See me in Quick Add”","Keep Snap Map in Ghost Mode","Check which apps are connected to your account","Review your public profile and any Spotlight posts","Use a different username from your other apps"]},
+{n:"TikTok",url:function(u){return "https://www.tiktok.com/@"+u},
+ tips:["Set the account to Private unless you want public reach","Limit who can comment, Duet and Stitch","Turn off “Suggest your account to others”","Check old videos for faces, school logos and street signs","Hide your liked videos","Use a different username from your other apps"]},
+{n:"Facebook",url:function(u){return "https://www.facebook.com/"+u},
+ tips:["Set “Who can see your future posts” to Friends","Use “Limit past posts” to hide old public posts","Remove your phone number and email from About, or set them to Only me","Hide your friends list","Turn on review for posts and tags you appear in","Turn off search engines linking to your profile"]}
+];
+function esc(s){return s.replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function nameSearch(){
+ var n=document.getElementById("nm").value.trim().replace(/\s+/g," ");
+ var e=document.getElementById("nerr"),box=document.getElementById("nres");
+ if(!document.getElementById("mine").checked){e.textContent="Tick the box to confirm this is your own name.";return}
+ if(!/^[\p{L}\p{M} .'-]{2,60}$/u.test(n)){e.textContent="Type your full name, 2–60 letters.";return}
+ e.textContent="";
+ var q=encodeURIComponent('"'+n+'"'),r=encodeURIComponent(n);
+ var L=[["Google","https://www.google.com/search?q="+q],["Google Images","https://www.google.com/search?tbm=isch&q="+q],
+ ["Instagram (via Google)","https://www.google.com/search?q=site%3Ainstagram.com+"+q],
+ ["Snapchat (via Google)","https://www.google.com/search?q=site%3Asnapchat.com+"+q],
+ ["TikTok","https://www.tiktok.com/search/user?q="+r],
+ ["Facebook","https://www.facebook.com/search/people/?q="+r]];
+ box.innerHTML=L.map(function(x){return '<a class="btn ghost" href="'+x[1]+'" target="_blank" rel="noopener noreferrer">'+x[0]+'</a>'}).join("");
+}
+function build(){
+ var u=document.getElementById("u").value.trim().replace(/^@/,"");
+ var err=document.getElementById("err");
+ if(!u){err.textContent="Type your username first, then tap the button.";document.getElementById("u").focus();return}
+ if(!/^[A-Za-z0-9._-]{2,30}$/.test(u)){err.textContent="Use 2–30 letters, numbers, dots, dashes or underscores, with no spaces.";return}
+ err.textContent="";
+ var h="";
+ P.forEach(function(p,i){
+  var url=p.url(encodeURIComponent(u));
+  h+='<section class="plat" data-i="'+i+'"><h2>'+p.n+'</h2>'+
+  '<p style="color:var(--muted)">'+esc(p.n)+' profile for <strong>'+esc(u)+'</strong></p>'+
+  '<div class="links"><a class="btn" href="'+url+'" target="_blank" rel="noopener noreferrer">Open public profile</a></div>'+
+  '<ul>'+p.tips.map(function(t,j){return '<li><label><input type="checkbox" class="c"> <span>'+esc(t)+'</span></label></li>'}).join("")+'</ul>'+
+  '<div class="prog"></div></section>';
+ });
+ document.getElementById("plats").innerHTML=h;
+ document.getElementById("out").classList.remove("hide");
+ setTimeout(function(){document.getElementById("out").scrollIntoView({behavior:"smooth",block:"start"})},50);
+ update();
+}
+function update(){
+ document.querySelectorAll(".plat[data-i]").forEach(function(s){
+  var all=s.querySelectorAll(".c"),done=s.querySelectorAll(".c:checked");
+  s.querySelector(".prog").textContent=done.length+" of "+all.length+" done";
+ });
+}
+if(window.navigator.standalone||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)){document.getElementById("tip").className="hide"}
+
+
+document.getElementById("u").addEventListener("keydown",function(e){if(e.key==="Enter")build()});
+document.getElementById("plats").addEventListener("change",update);
+</script>
+</body>
+</html>
